@@ -1,5 +1,6 @@
 from black_scholes import calculate_call_price, calculate_put_price
 from greeks import calculate_call_delta, calculate_put_delta, calculate_gamma, calculate_vega, calculate_theta_call, calculate_theta_put, calculate_rho_call, calculate_rho_put
+from market_data import get_historical_prices, get_option_expirations, get_option_chain, get_risk_free_rate, calculate_log_returns, calculate_historical_volatility, time_to_expiration, calculate_closest_option
 
 def calculate_option_metrics(S, K, T, r, sigma):
 
@@ -31,13 +32,32 @@ def calculate_option_metrics(S, K, T, r, sigma):
 
 if __name__ == "__main__":
 
-    S = 100
-    K = 105
-    T = 30 / 365
-    r = 0.05
-    sigma = 0.20   
+    ticker = "AAPL"
+    prices = get_historical_prices(ticker)
+    expirations = get_option_expirations(ticker)
+    expiration = expirations[0]
+    log_returns = calculate_log_returns(prices)
+    sigma = calculate_historical_volatility(log_returns)
+    S = prices.iloc[-1]
+    T = time_to_expiration(expiration)
+    r = get_risk_free_rate()
 
+    calls, puts = get_option_chain(ticker, expiration)
+    closest_call = calculate_closest_option(calls, S)
+    closest_put = calculate_closest_option(puts, S)
+    call_K = closest_call["strike"]
+    put_K = closest_put["strike"]
+    if call_K != put_K:
+        raise ValueError("The closest call and put strikes do not match.")
+    K =  call_K
     results = calculate_option_metrics(S, K, T, r, sigma)
 
+    print(f"Current stock price: ${S:.2f}")
+    print(f"Strike price: ${K:.2f}")
+    print(f"Historical Volatility: {sigma:.2%}")
+    print(f"Expiration date: {expiration}")
+    print(f"Time to expiration: {T:.6f} years")
+    print(f"Risk-Free Rate: {r:.2%}")
+    print()
     for metric, value in results.items():
         print(f"{metric}: {value:.6f}")
