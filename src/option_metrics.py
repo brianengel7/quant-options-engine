@@ -1,7 +1,10 @@
 from black_scholes import calculate_call_price, calculate_put_price
 from greeks import calculate_call_delta, calculate_put_delta, calculate_gamma, calculate_vega, calculate_theta_call, calculate_theta_put, calculate_rho_call, calculate_rho_put
 from market_data import get_historical_prices, get_option_expirations, get_option_chain, get_risk_free_rate, calculate_log_returns, calculate_historical_volatility, time_to_expiration, calculate_closest_option
-from implied_volatility import calculate_call_iv
+from implied_volatility import calculate_call_iv, calculate_put_iv, calculate_iv_smile
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.ticker import PercentFormatter
 
 def calculate_option_metrics(S, K, T, r, sigma):
 
@@ -70,7 +73,25 @@ if __name__ == "__main__":
 
     call_price_difference = call_model_price - call_market_price
     put_price_difference = put_model_price - put_market_price
-    call_iv = calculate_call_iv(call_market_price, S, K, T, r)
+    call_iv = calculate_call_iv(call_market_price, S, call_K, T, r)
+    put_iv = calculate_put_iv(put_market_price, S, put_K, T, r)
+
+    call_smile_df = calculate_iv_smile(
+        calls,
+        "call",
+        S,
+        T,
+        r
+    )
+
+    put_smile_df = calculate_iv_smile(
+        puts,
+        "put",
+        S,
+        T,
+        r
+    )
+
 
     print(f"Current stock price: ${S:.2f}")
     print(f"Strike price: ${K:.2f}")
@@ -79,6 +100,36 @@ if __name__ == "__main__":
     print(f"Time to expiration: {T:.6f} years")
     print(f"Risk-Free Rate: {r:.2%}")
     print(f'Call Implied Volatility: {call_iv:.2%}')
+    print(f'Put Implied Volatility: {put_iv:.2%}')
     print()
     for metric, value in results.items():
         print(f"{metric}: {value:.6f}")
+    fig, ax = plt.subplots(figsize = (10,6))
+    ax.plot(
+        call_smile_df["strike"],
+        call_smile_df["implied_volatility"],
+        marker="o",
+        label="Calls"
+    )
+    ax.plot(
+        put_smile_df["strike"],
+        put_smile_df["implied_volatility"],
+        marker="o",
+        label="Puts"
+    )
+    ax.axvline(
+        S,
+        color="black",
+        linestyle="--",
+        label=f"Stock price: ${S:.2f}"
+    )
+    ax.set_xlabel("Strike Price ($)")
+    ax.set_ylabel("Implied Volatility")
+    ax.set_title(f"{ticker} Implied Volatility by Strike")
+    ax.yaxis.set_major_formatter(PercentFormatter(1.0))
+    ax.grid(True, linestyle="--", alpha=0.35)
+    ax.legend()
+
+    fig.tight_layout()
+    plt.show()
+
