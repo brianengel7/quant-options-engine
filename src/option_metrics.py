@@ -5,6 +5,7 @@ from implied_volatility import calculate_call_iv, calculate_put_iv, calculate_iv
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
+from binomial_tree import calculate_binomial_price
 
 def calculate_option_metrics(S, K, T, r, sigma):
 
@@ -49,7 +50,6 @@ if __name__ == "__main__":
     log_returns = calculate_log_returns(prices)
     sigma = calculate_historical_volatility(log_returns)
     S = prices.iloc[-1]
-    T = time_to_expiration(expiration)
     r = get_risk_free_rate()
 
     calls, puts = get_option_chain(ticker, expiration)
@@ -70,6 +70,69 @@ if __name__ == "__main__":
 
     call_model_price = results['Call Price']
     put_model_price = results['Put Price']
+
+    steps = 500
+
+    european_binomial_call = calculate_binomial_price(
+        S=S,
+        K=call_K,
+        T=T,
+        r=r,
+        sigma=sigma,
+        steps=steps,
+        type="call",
+        style="european",
+    )
+
+    american_binomial_call = calculate_binomial_price(
+        S=S,
+        K=call_K,
+        T=T,
+        r=r,
+        sigma=sigma,
+        steps=steps,
+        type="call",
+        style="american",
+    )
+
+    european_binomial_put = calculate_binomial_price(
+        S=S,
+        K=put_K,
+        T=T,
+        r=r,
+        sigma=sigma,
+        steps=steps,
+        type="put",
+        style="european",
+    )
+
+    american_binomial_put = calculate_binomial_price(
+        S=S,
+        K=put_K,
+        T=T,
+        r=r,
+        sigma=sigma,
+        steps=steps,
+        type="put",
+        style="american",
+    )
+
+    call_binomial_difference = (
+        european_binomial_call - call_model_price
+    )
+
+    put_binomial_difference = (
+        european_binomial_put - put_model_price
+    )
+
+    call_early_exercise_premium = (
+        american_binomial_call - european_binomial_call
+    )
+
+    put_early_exercise_premium = (
+        american_binomial_put - european_binomial_put
+    )
+
 
     call_price_difference = call_model_price - call_market_price
     put_price_difference = put_model_price - put_market_price
@@ -104,6 +167,29 @@ if __name__ == "__main__":
     print()
     for metric, value in results.items():
         print(f"{metric}: {value:.6f}")
+
+    print()
+    print(f"Binomial Tree Results ({steps} steps)")
+    print()
+
+    print("Call:")
+    print(f"  Market midpoint: ${call_market_price:.4f}")
+    print(f"  Black-Scholes price: ${call_model_price:.4f}")
+    print(f"  European binomial price: ${european_binomial_call:.4f}")
+    print(f"  American binomial price: ${american_binomial_call:.4f}")
+    print(f"  Binomial vs. Black-Scholes: ${call_binomial_difference:.4f}")
+    print(f"  Early-exercise premium: ${call_early_exercise_premium:.4f}")
+
+    print()
+
+    print("Put:")
+    print(f"  Market midpoint: ${put_market_price:.4f}")
+    print(f"  Black-Scholes price: ${put_model_price:.4f}")
+    print(f"  European binomial price: ${european_binomial_put:.4f}")
+    print(f"  American binomial price: ${american_binomial_put:.4f}")
+    print(f"  Binomial vs. Black-Scholes: ${put_binomial_difference:.4f}")
+    print(f"  Early-exercise premium: ${put_early_exercise_premium:.4f}")
+    
     fig, ax = plt.subplots(figsize = (10,6))
     ax.plot(
         call_smile_df["strike"],

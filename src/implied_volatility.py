@@ -1,4 +1,4 @@
-from src.black_scholes import calculate_call_price, calculate_put_price
+from black_scholes import calculate_call_price, calculate_put_price
 import numpy as np
 import pandas as pd
 
