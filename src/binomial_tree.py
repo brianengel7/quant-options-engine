@@ -69,28 +69,3 @@ def calculate_binomial_price(S, K, T, r, sigma, steps, type = 'call', style = 'a
                 option_values[down_moves] = continuation_value
 
     return option_values[0]
-
-american_put = calculate_binomial_price(
-    S=80,
-    K=100,
-    T=1,
-    r=0.05,
-    sigma=0.20,
-    steps=100,
-    type="put",
-    style="american"
-)
-
-european_put = calculate_binomial_price(
-    S=80,
-    K=100,
-    T=1,
-    r=0.05,
-    sigma=0.20,
-    steps=100,
-    type="put",
-    style="european"
-)
-
-print(american_put)
-print(european_put)

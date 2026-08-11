@@ -43,8 +43,8 @@ def calculate_iv_smile(option_chain, option_type, S, T, r, strike_range = 0.2):
         try:
             iv = iv_function(market_midpoint, S, strike, T, r)
             smile_data.append({'strike': strike, 'implied_volatility': iv})
-        except (ValueError, RuntimeError) as error:
-            print(f"Skipping {option_type} strike {strike}: {error}")
+        except (ValueError, RuntimeError):
+            continue
     if not smile_data:
         return pd.DataFrame(
             columns=["strike", "implied_volatility"]

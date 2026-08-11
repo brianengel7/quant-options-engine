@@ -6,6 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 from binomial_tree import calculate_binomial_price
+from monte_carlo import calculate_monte_carlo_price
 
 def calculate_option_metrics(S, K, T, r, sigma):
 
@@ -72,6 +73,8 @@ if __name__ == "__main__":
     put_model_price = results['Put Price']
 
     steps = 500
+    simulations = 100_000
+    seed = 42
 
     european_binomial_call = calculate_binomial_price(
         S=S,
@@ -133,6 +136,39 @@ if __name__ == "__main__":
         american_binomial_put - european_binomial_put
     )
 
+    monte_carlo_call = calculate_monte_carlo_price(
+        S=S,
+        K=call_K,
+        T=T,
+        r=r,
+        sigma=sigma,
+        option_type="call",
+        simulations=simulations,
+        seed=seed,
+    )
+
+    monte_carlo_put = calculate_monte_carlo_price(
+        S=S,
+        K=call_K,
+        T=T,
+        r=r,
+        sigma=sigma,
+        option_type="put",
+        simulations=simulations,
+        seed=seed,
+    )
+
+    monte_carlo_call_price = monte_carlo_call["price"]
+    monte_carlo_put_price = monte_carlo_put["price"]
+
+    call_monte_carlo_difference = (
+        monte_carlo_call_price - call_model_price
+    )
+
+    put_monte_carlo_difference = (
+        monte_carlo_put_price - put_model_price
+    )
+
 
     call_price_difference = call_model_price - call_market_price
     put_price_difference = put_model_price - put_market_price
@@ -179,7 +215,16 @@ if __name__ == "__main__":
     print(f"  American binomial price: ${american_binomial_call:.4f}")
     print(f"  Binomial vs. Black-Scholes: ${call_binomial_difference:.4f}")
     print(f"  Early-exercise premium: ${call_early_exercise_premium:.4f}")
-
+    print(f"  Monte Carlo price: ${monte_carlo_call_price:.4f}")
+    print(
+        "  Monte Carlo 95% CI: "
+        f"(${monte_carlo_call['confidence_interval'][0]:.4f}, "
+        f"${monte_carlo_call['confidence_interval'][1]:.4f})"
+    )
+    print(
+        "  Monte Carlo vs. Black-Scholes: "
+        f"${call_monte_carlo_difference:.4f}"
+    )
     print()
 
     print("Put:")
@@ -189,6 +234,16 @@ if __name__ == "__main__":
     print(f"  American binomial price: ${american_binomial_put:.4f}")
     print(f"  Binomial vs. Black-Scholes: ${put_binomial_difference:.4f}")
     print(f"  Early-exercise premium: ${put_early_exercise_premium:.4f}")
+    print(f"  Monte Carlo price: ${monte_carlo_put_price:.4f}")
+    print(
+        "  Monte Carlo 95% CI: "
+        f"(${monte_carlo_put['confidence_interval'][0]:.4f}, "
+        f"${monte_carlo_put['confidence_interval'][1]:.4f})"
+    )
+    print(
+        "  Monte Carlo vs. Black-Scholes: "
+        f"${put_monte_carlo_difference:.4f}"
+    )
     
     fig, ax = plt.subplots(figsize = (10,6))
     ax.plot(
