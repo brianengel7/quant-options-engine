@@ -1,5 +1,5 @@
 # quant-options-engine
-Options Pricing Engine
+Options Pricing and Risk Analytics Engine
 
 ## Features
 
