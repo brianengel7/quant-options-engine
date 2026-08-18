@@ -239,6 +239,52 @@ def calculate_sharpe_ratio(portfolio_returns, risk_free_rate=0, trading_days=252
     )
 
     return sharpe_ratio
+
+def calculate_sortino_ratio(
+    portfolio_returns,
+    minimum_acceptable_return=0.0,
+    trading_days=252
+):
+    if portfolio_returns.empty:
+        raise ValueError("Portfolio returns cannot be empty.")
+
+    if minimum_acceptable_return <= -1:
+        raise ValueError(
+            "Minimum acceptable return must be greater than -100%."
+        )
+
+    if trading_days <= 0:
+        raise ValueError(
+            "Trading days must be greater than zero."
+        )
+
+    daily_target_return = (
+        (1 + minimum_acceptable_return)
+        ** (1 / trading_days)
+    ) - 1
+
+    excess_returns = (
+        portfolio_returns - daily_target_return
+    )
+
+    downside_returns = excess_returns.clip(upper=0)
+
+    downside_deviation = np.sqrt(
+        (downside_returns ** 2).mean()
+    )
+
+    if np.isclose(downside_deviation, 0):
+        raise ValueError(
+            "Sortino ratio is undefined when downside deviation is zero."
+        )
+
+    sortino_ratio = (
+        excess_returns.mean()
+        / downside_deviation
+        * np.sqrt(trading_days)
+    )
+
+    return sortino_ratio
     
 
 if __name__ == "__main__":
@@ -316,6 +362,11 @@ if __name__ == "__main__":
         risk_free_rate=risk_free_rate
     )
 
+    sortino_ratio = calculate_sortino_ratio(
+        portfolio_returns,
+        minimum_acceptable_return=0.04
+    )
+
     print(
         f"Annualized volatility: {annualized_volatility:.2%}"
     )
@@ -328,6 +379,7 @@ if __name__ == "__main__":
     print(f"Annualized return: {annualized_return:.2%}")
     print(f"Annualized volatility: {annualized_volatility:.2%}")
     print(f"Sharpe ratio: {sharpe_ratio:.2f}")
+    print(f"Sortino ratio: {sortino_ratio:.2f}")
 
 
 
