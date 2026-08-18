@@ -203,6 +203,43 @@ def calculate_portfolio_volatility(
 
     return portfolio_volatility
 
+def calculate_sharpe_ratio(portfolio_returns, risk_free_rate=0, trading_days=252):
+    if portfolio_returns.empty:
+        raise ValueError("Portfolio returns cannot be empty.")
+
+    if risk_free_rate <= -1:
+        raise ValueError(
+            "Risk-free rate must be greater than -100%."
+        )
+
+    if trading_days <= 0:
+        raise ValueError(
+            "Trading days must be greater than zero."
+        )
+
+    daily_risk_free_rate = (
+        (1 + risk_free_rate) ** (1 / trading_days)
+    ) - 1
+
+    daily_excess_returns = (
+        portfolio_returns - daily_risk_free_rate
+    )
+
+    daily_volatility = portfolio_returns.std()
+
+    if daily_volatility == 0:
+        raise ValueError(
+            "Sharpe ratio is undefined when volatility is zero."
+        )
+
+    sharpe_ratio = (
+        daily_excess_returns.mean()
+        / daily_volatility
+        * np.sqrt(trading_days)
+    )
+
+    return sharpe_ratio
+    
 
 if __name__ == "__main__":
     tickers = ["AAPL", "MSFT", "JPM"]
@@ -272,6 +309,13 @@ if __name__ == "__main__":
         weights
     )
 
+    risk_free_rate = 0.04
+
+    sharpe_ratio = calculate_sharpe_ratio(
+        portfolio_returns,
+        risk_free_rate=risk_free_rate
+    )
+
     print(
         f"Annualized volatility: {annualized_volatility:.2%}"
     )
@@ -280,4 +324,10 @@ if __name__ == "__main__":
         f"Covariance-based volatility: "
         f"{covariance_volatility:.2%}"
     )
+
+    print(f"Annualized return: {annualized_return:.2%}")
+    print(f"Annualized volatility: {annualized_volatility:.2%}")
+    print(f"Sharpe ratio: {sharpe_ratio:.2f}")
+
+
 
