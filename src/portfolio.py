@@ -285,6 +285,47 @@ def calculate_sortino_ratio(
     )
 
     return sortino_ratio
+
+def calculate_drawdowns(portfolio_returns):
+    if portfolio_returns.empty:
+        raise ValueError("Portfolio returns cannot be empty.")
+
+    growth_index = (1 + portfolio_returns).cumprod()
+
+    running_peak = growth_index.cummax()
+
+    drawdowns = growth_index / running_peak - 1
+    drawdowns.name = "Drawdown"
+
+    return drawdowns
+
+def calculate_max_drawdown(portfolio_returns):
+    drawdowns = calculate_drawdowns(portfolio_returns)
+
+    maximum_drawdown = drawdowns.min()
+
+    return maximum_drawdown
+
+def calculate_calmar_ratio(portfolio_returns, trading_days=252):
+    annualized_return = calculate_annualized_return(
+        portfolio_returns,
+        trading_days
+    )
+
+    maximum_drawdown = calculate_max_drawdown(
+        portfolio_returns
+    )
+
+    if np.isclose(maximum_drawdown, 0):
+        raise ValueError(
+            "Calmar ratio is undefined when maximum drawdown is zero."
+        )
+
+    calmar_ratio = (
+        annualized_return / abs(maximum_drawdown)
+    )
+
+    return calmar_ratio
     
 
 if __name__ == "__main__":
@@ -367,6 +408,18 @@ if __name__ == "__main__":
         minimum_acceptable_return=0.04
     )
 
+    drawdowns = calculate_drawdowns(
+        portfolio_returns
+    )
+
+    maximum_drawdown = calculate_max_drawdown(
+        portfolio_returns
+    )
+
+    calmar_ratio = calculate_calmar_ratio(
+        portfolio_returns
+    )
+
     print(
         f"Annualized volatility: {annualized_volatility:.2%}"
     )
@@ -380,6 +433,8 @@ if __name__ == "__main__":
     print(f"Annualized volatility: {annualized_volatility:.2%}")
     print(f"Sharpe ratio: {sharpe_ratio:.2f}")
     print(f"Sortino ratio: {sortino_ratio:.2f}")
+    print(f"Maximum drawdown: {maximum_drawdown:.2%}")
+    print(f"Calmar ratio: {calmar_ratio:.2f}")
 
 
 
