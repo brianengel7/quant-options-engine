@@ -562,7 +562,7 @@ def calculate_historical_var(
         tail_probability
     )
 
-    historical_var = -return_quantile
+    historical_var = max(-return_quantile, 0.0)
 
     return historical_var
 
