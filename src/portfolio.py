@@ -583,6 +583,62 @@ def calculate_dollar_var(
     dollar_var = portfolio_var * portfolio_value
 
     return dollar_var
+
+def calculate_historical_expected_shortfall(
+    portfolio_returns,
+    confidence_level=0.95
+):
+    if portfolio_returns.empty:
+        raise ValueError(
+            "Portfolio returns cannot be empty."
+        )
+
+    if not 0 < confidence_level < 1:
+        raise ValueError(
+            "Confidence level must be between 0 and 1."
+        )
+
+    tail_probability = 1 - confidence_level
+
+    return_quantile = portfolio_returns.quantile(
+        tail_probability
+    )
+
+    tail_returns = portfolio_returns[
+        portfolio_returns <= return_quantile
+    ]
+
+    if tail_returns.empty:
+        raise ValueError(
+            "No returns were found beyond the VaR threshold."
+        )
+
+    expected_shortfall = max(
+        -tail_returns.mean(),
+        0.0
+    )
+
+    return expected_shortfall
+
+def calculate_dollar_expected_shortfall(
+    expected_shortfall,
+    portfolio_value
+):
+    if expected_shortfall < 0:
+        raise ValueError(
+            "Expected shortfall cannot be negative."
+        )
+
+    if portfolio_value <= 0:
+        raise ValueError(
+            "Portfolio value must be greater than zero."
+        )
+
+    dollar_expected_shortfall = (
+        expected_shortfall * portfolio_value
+    )
+
+    return dollar_expected_shortfall
     
 
 if __name__ == "__main__":
@@ -723,6 +779,20 @@ if __name__ == "__main__":
         portfolio_value
     )
 
+    historical_expected_shortfall = (
+        calculate_historical_expected_shortfall(
+            portfolio_returns,
+            confidence_level=confidence_level
+        )
+    )
+
+    historical_dollar_expected_shortfall = (
+        calculate_dollar_expected_shortfall(
+            historical_expected_shortfall,
+            portfolio_value
+        )
+    )
+
     print(
         f"Annualized volatility: {annualized_volatility:.2%}"
     )
@@ -745,6 +815,8 @@ if __name__ == "__main__":
     print(f"Information ratio: {information_ratio:.2f}")
     print(f"Historical VaR ({confidence_level:.0%}): {historical_var:.2%}")
     print(f"Historical dollar VaR: ${historical_dollar_var:,.2f}")
+    print(f"Historical Expected Shortfall ({confidence_level:.0%}): {historical_expected_shortfall:.2%}")
+    print(f"Historical dollar Expected Shortfall: ${historical_dollar_expected_shortfall:,.2f}")
 
     print("\nAligned portfolio and benchmark returns:")
     print(aligned_returns.head())
