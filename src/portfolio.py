@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
+from scipy.stats import norm
 
 
 def get_portfolio_prices(tickers, start_date, end_date=None):
@@ -639,6 +640,170 @@ def calculate_dollar_expected_shortfall(
     )
 
     return dollar_expected_shortfall
+
+def calculate_parametric_var(
+    portfolio_returns,
+    confidence_level=0.95
+):
+    if portfolio_returns.empty:
+        raise ValueError(
+            "Portfolio returns cannot be empty."
+        )
+
+    if not 0 < confidence_level < 1:
+        raise ValueError(
+            "Confidence level must be between 0 and 1."
+        )
+
+    mean_return = portfolio_returns.mean()
+    volatility = portfolio_returns.std()
+
+    if np.isclose(volatility, 0):
+        raise ValueError(
+            "Parametric VaR is undefined when volatility is zero."
+        )
+
+    tail_probability = 1 - confidence_level
+
+    z_score = norm.ppf(tail_probability)
+
+    return_threshold = (
+        mean_return + z_score * volatility
+    )
+
+    parametric_var = max(
+        -return_threshold,
+        0.0
+    )
+
+    return parametric_var
+
+def calculate_parametric_expected_shortfall(
+    portfolio_returns,
+    confidence_level=0.95
+):
+    if portfolio_returns.empty:
+        raise ValueError(
+            "Portfolio returns cannot be empty."
+        )
+
+    if not 0 < confidence_level < 1:
+        raise ValueError(
+            "Confidence level must be between 0 and 1."
+        )
+
+    mean_return = portfolio_returns.mean()
+    volatility = portfolio_returns.std()
+
+    if np.isclose(volatility, 0):
+        raise ValueError(
+            "Parametric Expected Shortfall is undefined "
+            "when volatility is zero."
+        )
+
+    tail_probability = 1 - confidence_level
+
+    z_score = norm.ppf(tail_probability)
+
+    expected_shortfall = (
+        -mean_return
+        + volatility
+        * norm.pdf(z_score)
+        / tail_probability
+    )
+
+    expected_shortfall = max(
+        expected_shortfall,
+        0.0
+    )
+
+    return expected_shortfall
+
+def calculate_monte_carlo_risk(
+    portfolio_returns,
+    confidence_level=0.95,
+    number_of_simulations=10000,
+    horizon_days=1,
+    random_seed=None
+):
+    if portfolio_returns.empty:
+        raise ValueError(
+            "Portfolio returns cannot be empty."
+        )
+
+    if not 0 < confidence_level < 1:
+        raise ValueError(
+            "Confidence level must be between 0 and 1."
+        )
+
+    if number_of_simulations <= 0:
+        raise ValueError(
+            "Number of simulations must be greater than zero."
+        )
+
+    if horizon_days <= 0:
+        raise ValueError(
+            "Horizon days must be greater than zero."
+        )
+
+    daily_mean_return = portfolio_returns.mean()
+    daily_volatility = portfolio_returns.std()
+
+    if np.isclose(daily_volatility, 0):
+        raise ValueError(
+            "Monte Carlo risk is undefined when volatility is zero."
+        )
+
+    horizon_mean_return = (
+        daily_mean_return * horizon_days
+    )
+
+    horizon_volatility = (
+        daily_volatility * np.sqrt(horizon_days)
+    )
+
+    random_generator = np.random.default_rng(
+        random_seed
+    )
+
+    simulated_returns = random_generator.normal(
+        loc=horizon_mean_return,
+        scale=horizon_volatility,
+        size=number_of_simulations
+    )
+
+    tail_probability = 1 - confidence_level
+
+    return_threshold = np.quantile(
+        simulated_returns,
+        tail_probability
+    )
+
+    monte_carlo_var = max(
+        -return_threshold,
+        0.0
+    )
+
+    tail_returns = simulated_returns[
+        simulated_returns <= return_threshold
+    ]
+
+    if len(tail_returns) == 0:
+        raise ValueError(
+            "No simulated returns were found beyond "
+            "the VaR threshold."
+        )
+
+    monte_carlo_expected_shortfall = max(
+        -tail_returns.mean(),
+        0.0
+    )
+
+    return (
+        monte_carlo_var,
+        monte_carlo_expected_shortfall,
+        simulated_returns
+    )
     
 
 if __name__ == "__main__":
@@ -678,19 +843,6 @@ if __name__ == "__main__":
     annualized_return = calculate_annualized_return(
         portfolio_returns
     )
-
-    print("Portfolio returns:")
-    print(portfolio_returns.head())
-
-    print("\nCumulative returns:")
-    print(cumulative_returns.head())
-
-    print("\nPortfolio value:")
-    print(portfolio_value.head())
-
-    print(f"\nFinal portfolio value: ${portfolio_value.iloc[-1]:,.2f}")
-    print(f"Total return: {total_return:.2%}")
-    print(f"Annualized return: {annualized_return:.2%}")
 
     annualized_volatility = calculate_annualized_volatility(
     portfolio_returns
@@ -793,17 +945,69 @@ if __name__ == "__main__":
         )
     )
 
-    print(
-        f"Annualized volatility: {annualized_volatility:.2%}"
+    parametric_var = calculate_parametric_var(
+        portfolio_returns,
+        confidence_level=confidence_level
     )
 
-    print(
-        f"Covariance-based volatility: "
-        f"{covariance_volatility:.2%}"
+    parametric_dollar_var = calculate_dollar_var(
+        parametric_var,
+        portfolio_value
     )
+
+    parametric_expected_shortfall = (
+        calculate_parametric_expected_shortfall(
+            portfolio_returns,
+            confidence_level=confidence_level
+        )
+    )
+
+    parametric_dollar_expected_shortfall = (
+        calculate_dollar_expected_shortfall(
+            parametric_expected_shortfall,
+            portfolio_value
+        )
+    )
+
+    (monte_carlo_var, monte_carlo_expected_shortfall, simulated_returns
+    ) = calculate_monte_carlo_risk(
+        portfolio_returns,
+        confidence_level=confidence_level,
+        number_of_simulations=10000,
+        horizon_days=1,
+        random_seed=42
+    )
+
+    monte_carlo_dollar_var = calculate_dollar_var(
+        monte_carlo_var,
+        portfolio_value
+    )
+
+    monte_carlo_dollar_expected_shortfall = (
+        calculate_dollar_expected_shortfall(
+            monte_carlo_expected_shortfall,
+            portfolio_value
+        )
+    )
+
+    
+    print("Portfolio returns:")
+    print(portfolio_returns.head())
+    print("\nCumulative returns:")
+    print(cumulative_returns.head())
+    print("\nPortfolio value:")
+    print(portfolio_value.head())
+
+    print(f"\nFinal portfolio value: ${portfolio_value.iloc[-1]:,.2f}")
+    print(f"Total return: {total_return:.2%}")
+    print(f"Annualized return: {annualized_return:.2%}")
+
+    print(f"Annualized volatility: {annualized_volatility:.2%}")
+    print(f"Covariance-based volatility: {covariance_volatility:.2%}")
 
     print(f"Annualized return: {annualized_return:.2%}")
     print(f"Annualized volatility: {annualized_volatility:.2%}")
+    print()
     print(f"Sharpe ratio: {sharpe_ratio:.2f}")
     print(f"Sortino ratio: {sortino_ratio:.2f}")
     print(f"Maximum drawdown: {maximum_drawdown:.2%}")
@@ -813,11 +1017,22 @@ if __name__ == "__main__":
     print(f"Annualized alpha: {portfolio_alpha:.2%}")
     print(f"Tracking error: {tracking_error:.2%}")
     print(f"Information ratio: {information_ratio:.2f}")
+    print()
     print(f"Historical VaR ({confidence_level:.0%}): {historical_var:.2%}")
     print(f"Historical dollar VaR: ${historical_dollar_var:,.2f}")
     print(f"Historical Expected Shortfall ({confidence_level:.0%}): {historical_expected_shortfall:.2%}")
     print(f"Historical dollar Expected Shortfall: ${historical_dollar_expected_shortfall:,.2f}")
-
+    print()
+    print(f"Parametric VaR ({confidence_level:.0%}): {parametric_var:.2%}")
+    print(f"Parametric dollar VaR: ${parametric_dollar_var:,.2f}")
+    print(f"Parametric Expected Shortfall ({confidence_level:.0%}): {parametric_expected_shortfall:.2%}")
+    print(f"Parametric dollar Expected Shortfall: ${parametric_dollar_expected_shortfall:,.2f}")
+    print()
+    print(f"Monte Carlo VaR ({confidence_level:.0%}): {monte_carlo_var:.2%}")
+    print(f"Monte Carlo dollar VaR: ${monte_carlo_dollar_var:,.2f}")
+    print(f"Monte Carlo Expected Shortfall ({confidence_level:.0%}): {monte_carlo_expected_shortfall:.2%}")
+    print(f"Monte Carlo dollar Expected Shortfall: ${monte_carlo_dollar_expected_shortfall:,.2f}")
+    print()
     print("\nAligned portfolio and benchmark returns:")
     print(aligned_returns.head())
 
