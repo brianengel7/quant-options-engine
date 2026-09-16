@@ -804,9 +804,138 @@ def calculate_monte_carlo_risk(
         monte_carlo_expected_shortfall,
         simulated_returns
     )
+
+def calculate_return_contributions(
+    asset_returns,
+    weights,
+    trading_days=252
+):
+    if asset_returns.empty:
+        raise ValueError(
+            "Asset returns cannot be empty."
+        )
+
+    if trading_days <= 0:
+        raise ValueError(
+            "Trading days must be greater than zero."
+        )
+
+    weight_series = pd.Series(weights, dtype=float)
+
+    missing_assets = set(asset_returns.columns) - set(
+        weight_series.index
+    )
+
+    if missing_assets:
+        raise ValueError(
+            f"Missing weights for: {sorted(missing_assets)}"
+        )
+
+    weight_series = weight_series.reindex(
+        asset_returns.columns
+    )
+
+    if not np.isclose(weight_series.sum(), 1.0):
+        raise ValueError(
+            "Portfolio weights must sum to 1."
+        )
+
+    annualized_asset_returns = (
+        asset_returns.mean() * trading_days
+    )
+
+    return_contributions = (
+        weight_series * annualized_asset_returns
+    )
+
+    return_contributions.name = "Return Contribution"
+
+    return return_contributions
+
+def calculate_volatility_contributions(
+    asset_returns,
+    weights,
+    trading_days=252
+):
+    if asset_returns.empty:
+        raise ValueError(
+            "Asset returns cannot be empty."
+        )
+
+    if trading_days <= 0:
+        raise ValueError(
+            "Trading days must be greater than zero."
+        )
+
+    weight_series = pd.Series(weights, dtype=float)
+
+    missing_assets = set(asset_returns.columns) - set(
+        weight_series.index
+    )
+
+    if missing_assets:
+        raise ValueError(
+            f"Missing weights for: {sorted(missing_assets)}"
+        )
+
+    weight_series = weight_series.reindex(
+        asset_returns.columns
+    )
+
+    if not np.isclose(weight_series.sum(), 1.0):
+        raise ValueError(
+            "Portfolio weights must sum to 1."
+        )
+
+    annualized_covariance = (
+        asset_returns.cov() * trading_days
+    )
+
+    portfolio_variance = (
+        weight_series.to_numpy()
+        @ annualized_covariance.to_numpy()
+        @ weight_series.to_numpy()
+    )
+
+    portfolio_volatility = np.sqrt(
+        portfolio_variance
+    )
+
+    if np.isclose(portfolio_volatility, 0):
+        raise ValueError(
+            "Volatility contributions are undefined "
+            "when portfolio volatility is zero."
+        )
+
+    marginal_contributions = (
+        annualized_covariance
+        @ weight_series
+        / portfolio_volatility
+    )
+
+    volatility_contributions = (
+        weight_series * marginal_contributions
+    )
+
+    percentage_contributions = (
+        volatility_contributions
+        / portfolio_volatility
+    )
+
+    results = pd.DataFrame({
+        "Weight": weight_series,
+        "Volatility Contribution": volatility_contributions,
+        "Percentage of Portfolio Risk": percentage_contributions
+    })
+
+    return results
     
 
 if __name__ == "__main__":
+    # -----------------------------
+    # Portfolio inputs
+    # -----------------------------
+
     tickers = ["AAPL", "MSFT", "JPM"]
 
     weights = {
@@ -815,25 +944,45 @@ if __name__ == "__main__":
         "JPM": 0.25
     }
 
+    start_date = "2025-01-01"
+    initial_investment = 100000
+    risk_free_rate = 0.04
+    confidence_level = 0.95
+    benchmark_ticker = "SPY"
+
+    # -----------------------------
+    # Market data and returns
+    # -----------------------------
+
     prices = get_portfolio_prices(
         tickers=tickers,
-        start_date="2025-01-01"
+        start_date=start_date
     )
 
-    asset_returns = calculate_asset_returns(prices)
+    asset_returns = calculate_asset_returns(
+        prices
+    )
 
     portfolio_returns = calculate_portfolio_returns(
         asset_returns,
         weights
     )
 
+    # -----------------------------
+    # Portfolio performance
+    # -----------------------------
+
     cumulative_returns = calculate_cumulative_returns(
         portfolio_returns
     )
 
-    portfolio_value = calculate_portfolio_value(
+    portfolio_value_history = calculate_portfolio_value(
         portfolio_returns,
-        initial_investment=10000
+        initial_investment=initial_investment
+    )
+
+    current_portfolio_value = (
+        portfolio_value_history.iloc[-1]
     )
 
     total_return = calculate_total_return(
@@ -845,8 +994,12 @@ if __name__ == "__main__":
     )
 
     annualized_volatility = calculate_annualized_volatility(
-    portfolio_returns
+        portfolio_returns
     )
+
+    # -----------------------------
+    # Covariance and correlation
+    # -----------------------------
 
     covariance_matrix = calculate_covariance_matrix(
         asset_returns
@@ -861,7 +1014,9 @@ if __name__ == "__main__":
         weights
     )
 
-    risk_free_rate = 0.04
+    # -----------------------------
+    # Risk-adjusted performance
+    # -----------------------------
 
     sharpe_ratio = calculate_sharpe_ratio(
         portfolio_returns,
@@ -870,7 +1025,7 @@ if __name__ == "__main__":
 
     sortino_ratio = calculate_sortino_ratio(
         portfolio_returns,
-        minimum_acceptable_return=0.04
+        minimum_acceptable_return=risk_free_rate
     )
 
     drawdowns = calculate_drawdowns(
@@ -885,11 +1040,13 @@ if __name__ == "__main__":
         portfolio_returns
     )
 
-    benchmark_ticker = "SPY"
+    # -----------------------------
+    # Benchmark analysis
+    # -----------------------------
 
     benchmark_returns = get_benchmark_returns(
         benchmark_ticker=benchmark_ticker,
-        start_date="2025-01-01"
+        start_date=start_date
     )
 
     aligned_returns = align_portfolio_and_benchmark(
@@ -918,8 +1075,9 @@ if __name__ == "__main__":
         benchmark_returns
     )
 
-    confidence_level = 0.95
-    portfolio_value = 100000
+    # -----------------------------
+    # Historical VaR and ES
+    # -----------------------------
 
     historical_var = calculate_historical_var(
         portfolio_returns,
@@ -928,7 +1086,7 @@ if __name__ == "__main__":
 
     historical_dollar_var = calculate_dollar_var(
         historical_var,
-        portfolio_value
+        current_portfolio_value
     )
 
     historical_expected_shortfall = (
@@ -941,9 +1099,13 @@ if __name__ == "__main__":
     historical_dollar_expected_shortfall = (
         calculate_dollar_expected_shortfall(
             historical_expected_shortfall,
-            portfolio_value
+            current_portfolio_value
         )
     )
+
+    # -----------------------------
+    # Parametric VaR and ES
+    # -----------------------------
 
     parametric_var = calculate_parametric_var(
         portfolio_returns,
@@ -952,7 +1114,7 @@ if __name__ == "__main__":
 
     parametric_dollar_var = calculate_dollar_var(
         parametric_var,
-        portfolio_value
+        current_portfolio_value
     )
 
     parametric_expected_shortfall = (
@@ -965,11 +1127,18 @@ if __name__ == "__main__":
     parametric_dollar_expected_shortfall = (
         calculate_dollar_expected_shortfall(
             parametric_expected_shortfall,
-            portfolio_value
+            current_portfolio_value
         )
     )
 
-    (monte_carlo_var, monte_carlo_expected_shortfall, simulated_returns
+    # -----------------------------
+    # Monte Carlo VaR and ES
+    # -----------------------------
+
+    (
+        monte_carlo_var,
+        monte_carlo_expected_shortfall,
+        simulated_returns
     ) = calculate_monte_carlo_risk(
         portfolio_returns,
         confidence_level=confidence_level,
@@ -980,61 +1149,193 @@ if __name__ == "__main__":
 
     monte_carlo_dollar_var = calculate_dollar_var(
         monte_carlo_var,
-        portfolio_value
+        current_portfolio_value
     )
 
     monte_carlo_dollar_expected_shortfall = (
         calculate_dollar_expected_shortfall(
             monte_carlo_expected_shortfall,
-            portfolio_value
+            current_portfolio_value
         )
     )
 
-    
-    print("Portfolio returns:")
-    print(portfolio_returns.head())
-    print("\nCumulative returns:")
-    print(cumulative_returns.head())
-    print("\nPortfolio value:")
-    print(portfolio_value.head())
+    # -----------------------------
+    # Asset contribution analysis
+    # -----------------------------
 
-    print(f"\nFinal portfolio value: ${portfolio_value.iloc[-1]:,.2f}")
+    return_contributions = calculate_return_contributions(
+        asset_returns,
+        weights
+    )
+
+    volatility_contributions = (
+        calculate_volatility_contributions(
+            asset_returns,
+            weights
+        )
+    )
+
+    formatted_volatility_contributions = (
+        volatility_contributions.copy()
+    )
+
+    for column in formatted_volatility_contributions.columns:
+        formatted_volatility_contributions[column] = (
+            formatted_volatility_contributions[column]
+            .apply(lambda value: f"{value:.2%}")
+        )
+
+    # -----------------------------
+    # Output
+    # -----------------------------
+
+    print("\nPORTFOLIO INPUTS")
+    print("----------------")
+    print(f"Tickers: {', '.join(tickers)}")
+    print(f"Start date: {start_date}")
+    print(f"Initial investment: ${initial_investment:,.2f}")
+
+    print("\nWeights:")
+    for ticker, weight in weights.items():
+        print(f"{ticker}: {weight:.2%}")
+
+    print("\nPORTFOLIO RETURNS")
+    print("-----------------")
+    print(portfolio_returns.head())
+
+    print("\nCUMULATIVE RETURNS")
+    print("------------------")
+    print(cumulative_returns.head())
+
+    print("\nPORTFOLIO VALUE HISTORY")
+    print("-----------------------")
+    print(portfolio_value_history.head())
+
+    print("\nPERFORMANCE SUMMARY")
+    print("-------------------")
+    print(
+        f"Current portfolio value: "
+        f"${current_portfolio_value:,.2f}"
+    )
     print(f"Total return: {total_return:.2%}")
     print(f"Annualized return: {annualized_return:.2%}")
+    print(
+        f"Annualized volatility: "
+        f"{annualized_volatility:.2%}"
+    )
+    print(
+        f"Covariance-based volatility: "
+        f"{covariance_volatility:.2%}"
+    )
 
-    print(f"Annualized volatility: {annualized_volatility:.2%}")
-    print(f"Covariance-based volatility: {covariance_volatility:.2%}")
-
-    print(f"Annualized return: {annualized_return:.2%}")
-    print(f"Annualized volatility: {annualized_volatility:.2%}")
-    print()
+    print("\nRISK-ADJUSTED PERFORMANCE")
+    print("-------------------------")
     print(f"Sharpe ratio: {sharpe_ratio:.2f}")
     print(f"Sortino ratio: {sortino_ratio:.2f}")
     print(f"Maximum drawdown: {maximum_drawdown:.2%}")
     print(f"Calmar ratio: {calmar_ratio:.2f}")
+
+    print("\nBENCHMARK ANALYSIS")
+    print("------------------")
     print(f"Benchmark: {benchmark_ticker}")
     print(f"Portfolio beta: {portfolio_beta:.2f}")
     print(f"Annualized alpha: {portfolio_alpha:.2%}")
     print(f"Tracking error: {tracking_error:.2%}")
-    print(f"Information ratio: {information_ratio:.2f}")
-    print()
-    print(f"Historical VaR ({confidence_level:.0%}): {historical_var:.2%}")
-    print(f"Historical dollar VaR: ${historical_dollar_var:,.2f}")
-    print(f"Historical Expected Shortfall ({confidence_level:.0%}): {historical_expected_shortfall:.2%}")
-    print(f"Historical dollar Expected Shortfall: ${historical_dollar_expected_shortfall:,.2f}")
-    print()
-    print(f"Parametric VaR ({confidence_level:.0%}): {parametric_var:.2%}")
-    print(f"Parametric dollar VaR: ${parametric_dollar_var:,.2f}")
-    print(f"Parametric Expected Shortfall ({confidence_level:.0%}): {parametric_expected_shortfall:.2%}")
-    print(f"Parametric dollar Expected Shortfall: ${parametric_dollar_expected_shortfall:,.2f}")
-    print()
-    print(f"Monte Carlo VaR ({confidence_level:.0%}): {monte_carlo_var:.2%}")
-    print(f"Monte Carlo dollar VaR: ${monte_carlo_dollar_var:,.2f}")
-    print(f"Monte Carlo Expected Shortfall ({confidence_level:.0%}): {monte_carlo_expected_shortfall:.2%}")
-    print(f"Monte Carlo dollar Expected Shortfall: ${monte_carlo_dollar_expected_shortfall:,.2f}")
-    print()
-    print("\nAligned portfolio and benchmark returns:")
+    print(
+        f"Information ratio: "
+        f"{information_ratio:.2f}"
+    )
+
+    print("\nHISTORICAL RISK")
+    print("---------------")
+    print(
+        f"Historical VaR ({confidence_level:.0%}): "
+        f"{historical_var:.2%}"
+    )
+    print(
+        f"Historical dollar VaR: "
+        f"${historical_dollar_var:,.2f}"
+    )
+    print(
+        f"Historical Expected Shortfall "
+        f"({confidence_level:.0%}): "
+        f"{historical_expected_shortfall:.2%}"
+    )
+    print(
+        f"Historical dollar Expected Shortfall: "
+        f"${historical_dollar_expected_shortfall:,.2f}"
+    )
+
+    print("\nPARAMETRIC RISK")
+    print("----------------")
+    print(
+        f"Parametric VaR ({confidence_level:.0%}): "
+        f"{parametric_var:.2%}"
+    )
+    print(
+        f"Parametric dollar VaR: "
+        f"${parametric_dollar_var:,.2f}"
+    )
+    print(
+        f"Parametric Expected Shortfall "
+        f"({confidence_level:.0%}): "
+        f"{parametric_expected_shortfall:.2%}"
+    )
+    print(
+        f"Parametric dollar Expected Shortfall: "
+        f"${parametric_dollar_expected_shortfall:,.2f}"
+    )
+
+    print("\nMONTE CARLO RISK")
+    print("----------------")
+    print(
+        f"Monte Carlo VaR ({confidence_level:.0%}): "
+        f"{monte_carlo_var:.2%}"
+    )
+    print(
+        f"Monte Carlo dollar VaR: "
+        f"${monte_carlo_dollar_var:,.2f}"
+    )
+    print(
+        f"Monte Carlo Expected Shortfall "
+        f"({confidence_level:.0%}): "
+        f"{monte_carlo_expected_shortfall:.2%}"
+    )
+    print(
+        f"Monte Carlo dollar Expected Shortfall: "
+        f"${monte_carlo_dollar_expected_shortfall:,.2f}"
+    )
+
+    print("\nANNUALIZED COVARIANCE MATRIX")
+    print("----------------------------")
+    print(covariance_matrix)
+
+    print("\nCORRELATION MATRIX")
+    print("------------------")
+    print(correlation_matrix)
+
+    print("\nALIGNED PORTFOLIO AND BENCHMARK RETURNS")
+    print("---------------------------------------")
     print(aligned_returns.head())
 
+    print("\nANNUALIZED RETURN CONTRIBUTIONS")
+    print("--------------------------------")
+    print(
+        return_contributions.apply(
+            lambda value: f"{value:.2%}"
+        )
+    )
+    print(
+        f"Total arithmetic return contribution: "
+        f"{return_contributions.sum():.2%}"
+    )
+
+    print("\nASSET-LEVEL RISK CONTRIBUTIONS")
+    print("------------------------------")
+    print(formatted_volatility_contributions)
+
+    print("\nMOST RECENT DRAWDOWNS")
+    print("---------------------")
+    print(drawdowns.tail())
 
 
