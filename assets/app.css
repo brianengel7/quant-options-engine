@@ -1,0 +1,100 @@
+[data-testid="stAppViewContainer"] {
+    background:
+        radial-gradient(
+            circle at 10% 0%,
+            rgba(37, 99, 235, 0.12),
+            transparent 32rem
+        ),
+        #070b14;
+}
+
+[data-testid="stMetric"] {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(17, 24, 39, 0.98),
+            rgba(11, 18, 32, 0.98)
+        );
+    border: 1px solid #263449;
+    border-radius: 0.85rem;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.20);
+}
+
+[data-testid="stMetricLabel"] {
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+[data-testid="stMetricValue"] {
+    color: #f8fafc;
+    letter-spacing: -0.02em;
+}
+
+[data-testid="stForm"] {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(17, 24, 39, 0.98),
+            rgba(11, 18, 32, 0.98)
+        );
+    border: 1px solid #263449;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+}
+
+[data-testid="stDataFrame"] {
+    border: 1px solid #263449;
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
+[data-testid="stPlotlyChart"] {
+    background: #0f172a;
+    border: 1px solid #263449;
+    border-radius: 0.85rem;
+    padding: 0.35rem;
+    overflow: hidden;
+}
+
+[data-testid="stFormSubmitButton"] button,
+.stButton > button {
+    min-height: 2.75rem;
+    font-weight: 650;
+}
+
+[data-testid="stFormSubmitButton"] button {
+    background:
+        linear-gradient(
+            135deg,
+            #38bdf8,
+            #2563eb
+        );
+    color: #ffffff;
+    border: none;
+}
+
+[data-testid="stAlert"] {
+    border-radius: 0.75rem;
+}
+
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0.35rem;
+    border-bottom: 1px solid #263449;
+}
+
+.stTabs [data-baseweb="tab"] {
+    background: #111827;
+    border-radius: 0.6rem 0.6rem 0 0;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.stTabs [aria-selected="true"] {
+    background: #17233a;
+}
+
+hr {
+    border-color: #263449;
+}
