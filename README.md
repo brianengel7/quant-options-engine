@@ -274,128 +274,6 @@ print(f"Call price: ${call_price:.2f}")
 
 The options modules also support implied-volatility recovery, Greeks, binomial-tree valuation, and Monte Carlo pricing.
 
-## Financial Methodology
-
-### Portfolio Return
-
-For a daily-rebalanced portfolio, the return on day \(t\) is:
-
-\[
-R_{p,t} = \sum_{i=1}^{n} w_i R_{i,t}
-\]
-
-where \(w_i\) is the target weight of asset \(i\), and \(R_{i,t}\) is its daily return.
-
-### Annualized Return
-
-Annualized return is calculated geometrically:
-
-\[
-R_{\text{annual}}
-=
-\left(
-\prod_{t=1}^{T}(1+R_{p,t})
-\right)^{252/T}-1
-\]
-
-### Annualized Volatility
-
-\[
-\sigma_{\text{annual}}
-=
-\sigma_{\text{daily}}\sqrt{252}
-\]
-
-### Sharpe Ratio
-
-\[
-\text{Sharpe}
-=
-\frac{\overline{R_p-R_f}}
-{\sigma_p}
-\sqrt{252}
-\]
-
-The annual risk-free rate is converted into an equivalent daily rate before calculating daily excess returns.
-
-### Sortino Ratio
-
-\[
-\text{Sortino}
-=
-\frac{\overline{R_p-T}}
-{\text{Downside Deviation}}
-\sqrt{252}
-\]
-
-Only returns below the selected target contribute to downside deviation.
-
-### Maximum Drawdown
-
-\[
-\text{Drawdown}_t
-=
-\frac{V_t}{\max_{s \leq t} V_s}-1
-\]
-
-Maximum drawdown is the most negative observation in the drawdown series.
-
-### Beta
-
-\[
-\beta_p
-=
-\frac{\operatorname{Cov}(R_p,R_b)}
-{\operatorname{Var}(R_b)}
-\]
-
-Beta measures the portfolio’s historical sensitivity to its selected benchmark.
-
-### Jensen’s Alpha
-
-\[
-\alpha
-=
-(R_p-R_f)-\beta_p(R_b-R_f)
-\]
-
-The implementation annualizes the average daily CAPM residual.
-
-### Tracking Error
-
-\[
-\text{Tracking Error}
-=
-\sigma(R_p-R_b)\sqrt{252}
-\]
-
-### Information Ratio
-
-\[
-\text{Information Ratio}
-=
-\frac{\text{Annualized Active Return}}
-{\text{Tracking Error}}
-\]
-
-### Historical Value at Risk
-
-Historical VaR uses the empirical lower-tail quantile of observed portfolio returns:
-
-\[
-\operatorname{VaR}_{c}
-=
--\operatorname{Quantile}(R_p,1-c)
-\]
-
-### Expected Shortfall
-
-Expected shortfall measures the average loss conditional on returns reaching or exceeding the VaR loss threshold.
-
-### Parametric Risk
-
-Parametric VaR and expected shortfall assume normally distributed portfolio returns and estimate tail risk using the sample mean and standard deviation.
-
 ### Monte Carlo Risk
 
 The Monte Carlo model:
@@ -407,37 +285,6 @@ The Monte Carlo model:
 5. Estimates VaR and expected shortfall from the simulated lower tail.
 
 A configurable random seed makes results reproducible.
-
-### Portfolio Optimization
-
-Expected returns and covariance are annualized from historical daily observations.
-
-The minimum-volatility portfolio solves:
-
-\[
-\min_w \quad w^\mathsf{T}\Sigma w
-\]
-
-The maximum-Sharpe portfolio solves:
-
-\[
-\max_w
-\quad
-\frac{w^\mathsf{T}\mu-R_f}
-{\sqrt{w^\mathsf{T}\Sigma w}}
-\]
-
-subject to:
-
-\[
-\sum_i w_i=1
-\]
-
-\[
-0 \leq w_i \leq w_{\max}
-\]
-
-The efficient frontier repeatedly minimizes volatility for different target returns under the same allocation constraints.
 
 ## Implied-Volatility Methodology
 
@@ -461,19 +308,6 @@ The engine builds call and put volatility smiles from live option-chain data by:
 1. Removing contracts with invalid or missing bid-ask quotes.
 2. Filtering contracts to a configurable strike range around the current stock price.
 3. Calculating the market midpoint:
-
-\[
-\text{Midpoint}
-=
-\frac{\text{Bid}+\text{Ask}}{2}
-\]
-
-4. Passing the midpoint into the implied-volatility solver.
-5. Removing contracts that violate price bounds or fail to converge.
-6. Sorting valid contracts by strike.
-7. Plotting implied volatility against strike price.
-
-The strike filter concentrates the analysis on contracts closer to the current stock price, where quotes are generally more relevant and liquid.
 
 ## Testing
 
