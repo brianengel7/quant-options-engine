@@ -1,6 +1,183 @@
 import numpy as np
 import pandas as pd
 
+from scipy.stats import norm
+
+def calculate_historical_var(
+    portfolio_returns,
+    confidence_level=0.95
+):
+    if portfolio_returns.empty:
+        raise ValueError(
+            "Portfolio returns cannot be empty."
+        )
+
+    if not 0 < confidence_level < 1:
+        raise ValueError(
+            "Confidence level must be between 0 and 1."
+        )
+
+    tail_probability = 1 - confidence_level
+
+    return_quantile = portfolio_returns.quantile(
+        tail_probability
+    )
+
+    historical_var = max(-return_quantile, 0.0)
+
+    return historical_var
+
+def calculate_dollar_var(
+    portfolio_var,
+    portfolio_value
+):
+    if portfolio_var < 0:
+        raise ValueError(
+            "Portfolio VaR cannot be negative."
+        )
+
+    if portfolio_value <= 0:
+        raise ValueError(
+            "Portfolio value must be greater than zero."
+        )
+
+    dollar_var = portfolio_var * portfolio_value
+
+    return dollar_var
+
+def calculate_historical_expected_shortfall(
+    portfolio_returns,
+    confidence_level=0.95
+):
+    if portfolio_returns.empty:
+        raise ValueError(
+            "Portfolio returns cannot be empty."
+        )
+
+    if not 0 < confidence_level < 1:
+        raise ValueError(
+            "Confidence level must be between 0 and 1."
+        )
+
+    tail_probability = 1 - confidence_level
+
+    return_quantile = portfolio_returns.quantile(
+        tail_probability
+    )
+
+    tail_returns = portfolio_returns[
+        portfolio_returns <= return_quantile
+    ]
+
+    if tail_returns.empty:
+        raise ValueError(
+            "No returns were found beyond the VaR threshold."
+        )
+
+    expected_shortfall = max(
+        -tail_returns.mean(),
+        0.0
+    )
+
+    return expected_shortfall
+
+def calculate_dollar_expected_shortfall(
+    expected_shortfall,
+    portfolio_value
+):
+    if expected_shortfall < 0:
+        raise ValueError(
+            "Expected shortfall cannot be negative."
+        )
+
+    if portfolio_value <= 0:
+        raise ValueError(
+            "Portfolio value must be greater than zero."
+        )
+
+    dollar_expected_shortfall = (
+        expected_shortfall * portfolio_value
+    )
+
+    return dollar_expected_shortfall
+
+def calculate_parametric_var(
+    portfolio_returns,
+    confidence_level=0.95
+):
+    if portfolio_returns.empty:
+        raise ValueError(
+            "Portfolio returns cannot be empty."
+        )
+
+    if not 0 < confidence_level < 1:
+        raise ValueError(
+            "Confidence level must be between 0 and 1."
+        )
+
+    mean_return = portfolio_returns.mean()
+    volatility = portfolio_returns.std()
+
+    if np.isclose(volatility, 0):
+        raise ValueError(
+            "Parametric VaR is undefined when volatility is zero."
+        )
+
+    tail_probability = 1 - confidence_level
+
+    z_score = norm.ppf(tail_probability)
+
+    return_threshold = (
+        mean_return + z_score * volatility
+    )
+
+    parametric_var = max(
+        -return_threshold,
+        0.0
+    )
+
+    return parametric_var
+
+def calculate_parametric_expected_shortfall(
+    portfolio_returns,
+    confidence_level=0.95
+):
+    if portfolio_returns.empty:
+        raise ValueError(
+            "Portfolio returns cannot be empty."
+        )
+
+    if not 0 < confidence_level < 1:
+        raise ValueError(
+            "Confidence level must be between 0 and 1."
+        )
+
+    mean_return = portfolio_returns.mean()
+    volatility = portfolio_returns.std()
+
+    if np.isclose(volatility, 0):
+        raise ValueError(
+            "Parametric Expected Shortfall is undefined "
+            "when volatility is zero."
+        )
+
+    tail_probability = 1 - confidence_level
+
+    z_score = norm.ppf(tail_probability)
+
+    expected_shortfall = (
+        -mean_return
+        + volatility
+        * norm.pdf(z_score)
+        / tail_probability
+    )
+
+    expected_shortfall = max(
+        expected_shortfall,
+        0.0
+    )
+
+    return expected_shortfall
 
 def calculate_correlated_monte_carlo_risk(
     asset_returns,
@@ -169,3 +346,4 @@ def calculate_correlated_monte_carlo_risk(
             simulated_daily_asset_returns
         )
     }
+
