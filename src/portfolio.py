@@ -59,6 +59,10 @@ from portfolio_contributions import (
     calculate_volatility_contributions
 )
 
+from portfolio_reporting import (
+    print_portfolio_report
+)
+
 if __name__ == "__main__":
     # -----------------------------
     # Portfolio inputs
@@ -504,244 +508,6 @@ if __name__ == "__main__":
         }
     ).T
 
-    # -----------------------------
-    # Output
-    # -----------------------------
-
-    print("\nPORTFOLIO INPUTS")
-    print("----------------")
-    print(f"Tickers: {', '.join(tickers)}")
-    print(f"Start date: {start_date}")
-    print(f"Initial investment: ${initial_investment:,.2f}")
-
-    print("\nWeights:")
-    for ticker, weight in weights.items():
-        print(f"{ticker}: {weight:.2%}")
-
-    print("\nPORTFOLIO RETURNS")
-    print("-----------------")
-    print(portfolio_returns.head())
-
-    print("\nCUMULATIVE RETURNS")
-    print("------------------")
-    print(cumulative_returns.head())
-
-    print("\nPORTFOLIO VALUE HISTORY")
-    print("-----------------------")
-    print(portfolio_value_history.head())
-
-    print("\nPERFORMANCE SUMMARY")
-    print("-------------------")
-    print(
-        f"Current portfolio value: "
-        f"${current_portfolio_value:,.2f}"
-    )
-    print(f"Total return: {total_return:.2%}")
-    print(f"Annualized return: {annualized_return:.2%}")
-    print(
-        f"Annualized volatility: "
-        f"{annualized_volatility:.2%}"
-    )
-    print(
-        f"Covariance-based volatility: "
-        f"{covariance_volatility:.2%}"
-    )
-
-    print("\nRISK-ADJUSTED PERFORMANCE")
-    print("-------------------------")
-    print(f"Sharpe ratio: {sharpe_ratio:.2f}")
-    print(f"Sortino ratio: {sortino_ratio:.2f}")
-    print(f"Maximum drawdown: {maximum_drawdown:.2%}")
-    print(f"Calmar ratio: {calmar_ratio:.2f}")
-
-    print("\nBENCHMARK ANALYSIS")
-    print("------------------")
-    print(f"Benchmark: {benchmark_ticker}")
-    print(f"Portfolio beta: {portfolio_beta:.2f}")
-    print(f"Annualized alpha: {portfolio_alpha:.2%}")
-    print(f"Tracking error: {tracking_error:.2%}")
-    print(
-        f"Information ratio: "
-        f"{information_ratio:.2f}"
-    )
-
-    print("\nHISTORICAL RISK")
-    print("---------------")
-    print(
-        f"Historical VaR ({confidence_level:.0%}): "
-        f"{historical_var:.2%}"
-    )
-    print(
-        f"Historical dollar VaR: "
-        f"${historical_dollar_var:,.2f}"
-    )
-    print(
-        f"Historical Expected Shortfall "
-        f"({confidence_level:.0%}): "
-        f"{historical_expected_shortfall:.2%}"
-    )
-    print(
-        f"Historical dollar Expected Shortfall: "
-        f"${historical_dollar_expected_shortfall:,.2f}"
-    )
-
-    print("\nPARAMETRIC RISK")
-    print("----------------")
-    print(
-        f"Parametric VaR ({confidence_level:.0%}): "
-        f"{parametric_var:.2%}"
-    )
-    print(
-        f"Parametric dollar VaR: "
-        f"${parametric_dollar_var:,.2f}"
-    )
-    print(
-        f"Parametric Expected Shortfall "
-        f"({confidence_level:.0%}): "
-        f"{parametric_expected_shortfall:.2%}"
-    )
-    print(
-        f"Parametric dollar Expected Shortfall: "
-        f"${parametric_dollar_expected_shortfall:,.2f}"
-    )
-
-    print("\nCORRELATED MONTE CARLO RISK")
-    print("----------------")
-    print(
-        f"Monte Carlo VaR ({confidence_level:.0%}): "
-        f"{monte_carlo_var:.2%}"
-    )
-    print(
-        f"Monte Carlo dollar VaR: "
-        f"${monte_carlo_dollar_var:,.2f}"
-    )
-    print(
-        f"Monte Carlo Expected Shortfall "
-        f"({confidence_level:.0%}): "
-        f"{monte_carlo_expected_shortfall:.2%}"
-    )
-    print(
-        f"Monte Carlo dollar Expected Shortfall: "
-        f"${monte_carlo_dollar_expected_shortfall:,.2f}"
-    )
-
-    print("\nANNUALIZED COVARIANCE MATRIX")
-    print("----------------------------")
-    print(covariance_matrix)
-
-    print("\nCORRELATION MATRIX")
-    print("------------------")
-    print(correlation_matrix)
-
-    print("\nALIGNED PORTFOLIO AND BENCHMARK RETURNS")
-    print("---------------------------------------")
-    print(aligned_returns.head())
-
-    print("\nANNUALIZED RETURN CONTRIBUTIONS")
-    print("--------------------------------")
-    print(
-        return_contributions.apply(
-            lambda value: f"{value:.2%}"
-        )
-    )
-    print(
-        f"Total arithmetic return contribution: "
-        f"{return_contributions.sum():.2%}"
-    )
-
-    print("\nASSET-LEVEL RISK CONTRIBUTIONS")
-    print("------------------------------")
-    print(formatted_volatility_contributions)
-
-    print("\nMOST RECENT DRAWDOWNS")
-    print("---------------------")
-    print(drawdowns.tail())
-
-    print("\nPORTFOLIO OPTIMIZATION")
-    print("----------------------")
-
-    print("\nCurrent portfolio weights:")
-    for ticker, weight in zip(
-        asset_returns.columns,
-        current_weight_array
-    ):
-        print(f"{ticker}: {weight:.2%}")
-
-    print(
-        f"Expected return: "
-        f"{current_portfolio_statistics['return']:.2%}"
-    )
-    print(
-        f"Volatility: "
-        f"{current_portfolio_statistics['volatility']:.2%}"
-    )
-    print(
-        f"Sharpe ratio: "
-        f"{current_portfolio_statistics['sharpe_ratio']:.2f}"
-    )
-
-    print("\nMinimum-volatility weights:")
-    for ticker, weight in (
-        minimum_volatility_portfolio["weights"].items()
-    ):
-        print(f"{ticker}: {weight:.2%}")
-
-    print(
-        f"Expected return: "
-        f"{minimum_volatility_portfolio['expected_return']:.2%}"
-    )
-    print(
-        f"Volatility: "
-        f"{minimum_volatility_portfolio['volatility']:.2%}"
-    )
-    print(
-        f"Sharpe ratio: "
-        f"{minimum_volatility_portfolio['sharpe_ratio']:.2f}"
-    )
-
-    print("\nMaximum-Sharpe weights:")
-    for ticker, weight in (
-        maximum_sharpe_portfolio["weights"].items()
-    ):
-        print(f"{ticker}: {weight:.2%}")
-
-    print(
-        f"Expected return: "
-        f"{maximum_sharpe_portfolio['expected_return']:.2%}"
-    )
-    print(
-        f"Volatility: "
-        f"{maximum_sharpe_portfolio['volatility']:.2%}"
-    )
-    print(
-        f"Sharpe ratio: "
-        f"{maximum_sharpe_portfolio['sharpe_ratio']:.2f}"
-    )
-
-    print("\nEfficient frontier:")
-    print(
-        efficient_frontier[
-            [
-                "Expected Return",
-                "Volatility",
-                "Sharpe Ratio"
-            ]
-        ].head(10).to_string(
-            index=False,
-            formatters={
-                "Expected Return": lambda value: (
-                    f"{value:.2%}"
-                ),
-                "Volatility": lambda value: (
-                    f"{value:.2%}"
-                ),
-                "Sharpe Ratio": lambda value: (
-                    f"{value:.2f}"
-                )
-            }
-        )
-    )
-
     chart_path = (
         Path(__file__).resolve().parent.parent
         / "outputs"
@@ -757,82 +523,6 @@ if __name__ == "__main__":
         save_path=chart_path
     )
 
-    print(
-        f"\nEfficient frontier chart saved to: "
-        f"{chart_path}"
-    )
-
-    print(
-        f"Maximum position weight: "
-        f"{maximum_position_weight:.0%}"
-    )
-
-    print("\nBUY-AND-HOLD PORTFOLIO")
-    print("----------------------")
-
-    print("\nInitial shares:")
-    for ticker, shares in buy_and_hold_shares.items():
-        print(f"{ticker}: {shares:,.4f}")
-
-    print(
-        f"\nFinal portfolio value: "
-        f"${buy_and_hold_value_history.iloc[-1]:,.2f}"
-    )
-
-    print(
-        f"Total return: "
-        f"{buy_and_hold_total_return:.2%}"
-    )
-
-    print(
-        f"Annualized return: "
-        f"{buy_and_hold_annualized_return:.2%}"
-    )
-
-    print(
-        f"Annualized volatility: "
-        f"{buy_and_hold_annualized_volatility:.2%}"
-    )
-
-    print(
-        f"Sharpe ratio: "
-        f"{buy_and_hold_sharpe_ratio:.2f}"
-    )
-
-    print("\nEnding weights:")
-    for ticker, weight in (
-        buy_and_hold_weights.iloc[-1].items()
-    ):
-        print(f"{ticker}: {weight:.2%}")
-
-    print("\nSTRATEGY COMPARISON")
-    print("-------------------")
-
-    print(
-        strategy_comparison.to_string(
-            formatters={
-                "Final Value": lambda value: (
-                    f"${value:,.2f}"
-                ),
-                "Total Return": lambda value: (
-                    f"{value:.2%}"
-                ),
-                "Annualized Return": lambda value: (
-                    f"{value:.2%}"
-                ),
-                "Annualized Volatility": lambda value: (
-                    f"{value:.2%}"
-                ),
-                "Sharpe Ratio": lambda value: (
-                    f"{value:.2f}"
-                ),
-                "Maximum Drawdown": lambda value: (
-                    f"{value:.2%}"
-                )
-            }
-        )
-    )
-
     strategy_chart_path = (
         Path(__file__).resolve().parent.parent
         / "outputs"
@@ -845,8 +535,153 @@ if __name__ == "__main__":
         save_path=strategy_chart_path
     )
 
-    print(
-        f"\nStrategy growth chart saved to: "
-        f"{strategy_chart_path}"
+    current_optimization_weights = pd.Series(
+        current_weight_array,
+        index=asset_returns.columns
+    )
+
+    portfolio_report = {
+        "inputs": {
+            "tickers": tickers,
+            "weights": weights,
+            "start_date": start_date,
+            "initial_investment": initial_investment,
+            "risk_free_rate": risk_free_rate,
+            "confidence_level": confidence_level,
+            "maximum_position_weight": (
+                maximum_position_weight
+            )
+        },
+        "previews": {
+            "portfolio_returns": portfolio_returns,
+            "cumulative_returns": cumulative_returns,
+            "portfolio_value": (
+                rebalanced_value_history
+            )
+        },
+        "performance": {
+            "current_value": current_portfolio_value,
+            "total_return": total_return,
+            "annualized_return": annualized_return,
+            "annualized_volatility": (
+                annualized_volatility
+            ),
+            "covariance_volatility": (
+                covariance_volatility
+            )
+        },
+        "risk_adjusted": {
+            "sharpe_ratio": sharpe_ratio,
+            "sortino_ratio": sortino_ratio,
+            "maximum_drawdown": maximum_drawdown,
+            "calmar_ratio": calmar_ratio,
+            "drawdowns": drawdowns
+        },
+        "benchmark": {
+            "ticker": benchmark_ticker,
+            "beta": portfolio_beta,
+            "alpha": portfolio_alpha,
+            "tracking_error": tracking_error,
+            "information_ratio": information_ratio,
+            "aligned_returns": aligned_returns
+        },
+        "risk": {
+            "historical": {
+                "var": historical_var,
+                "dollar_var": historical_dollar_var,
+                "expected_shortfall": (
+                    historical_expected_shortfall
+                ),
+                "dollar_expected_shortfall": (
+                    historical_dollar_expected_shortfall
+                )
+            },
+            "parametric": {
+                "var": parametric_var,
+                "dollar_var": parametric_dollar_var,
+                "expected_shortfall": (
+                    parametric_expected_shortfall
+                ),
+                "dollar_expected_shortfall": (
+                    parametric_dollar_expected_shortfall
+                )
+            },
+            "monte_carlo": {
+                "var": monte_carlo_var,
+                "dollar_var": monte_carlo_dollar_var,
+                "expected_shortfall": (
+                    monte_carlo_expected_shortfall
+                ),
+                "dollar_expected_shortfall": (
+                    monte_carlo_dollar_expected_shortfall
+                )
+            }
+        },
+        "matrices": {
+            "covariance": covariance_matrix,
+            "correlation": correlation_matrix
+        },
+        "contributions": {
+            "return": return_contributions,
+            "volatility": volatility_contributions
+        },
+        "optimization": {
+            "current": {
+                "weights": current_optimization_weights,
+                "expected_return": (
+                    current_portfolio_statistics["return"]
+                ),
+                "volatility": (
+                    current_portfolio_statistics[
+                        "volatility"
+                    ]
+                ),
+                "sharpe_ratio": (
+                    current_portfolio_statistics[
+                        "sharpe_ratio"
+                    ]
+                )
+            },
+            "minimum_volatility": (
+                minimum_volatility_portfolio
+            ),
+            "maximum_sharpe": (
+                maximum_sharpe_portfolio
+            ),
+            "efficient_frontier": efficient_frontier
+        },
+        "buy_and_hold": {
+            "shares": buy_and_hold_shares,
+            "final_value": (
+                buy_and_hold_value_history.iloc[-1]
+            ),
+            "total_return": (
+                buy_and_hold_total_return
+            ),
+            "annualized_return": (
+                buy_and_hold_annualized_return
+            ),
+            "annualized_volatility": (
+                buy_and_hold_annualized_volatility
+            ),
+            "sharpe_ratio": (
+                buy_and_hold_sharpe_ratio
+            ),
+            "maximum_drawdown": (
+                buy_and_hold_max_drawdown
+            ),
+            "ending_weights": (
+                buy_and_hold_weights.iloc[-1]
+            )
+        },
+        "strategy_comparison": strategy_comparison,
+        "charts": {
+            "efficient_frontier": chart_path,
+            "strategy_growth": strategy_chart_path
+        }
+    }
+
+    print_portfolio_report(
+        portfolio_report
     )
 
