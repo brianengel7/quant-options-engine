@@ -9,7 +9,8 @@ from portfolio_optimization import (
 )
 from portfolio_visualizations import (
     plot_efficient_frontier,
-    plot_strategy_growth
+    plot_strategy_growth,
+    plot_monte_carlo_distribution
 )
 from portfolio_holdings import (
     calculate_buy_and_hold_portfolio
@@ -318,6 +319,22 @@ if __name__ == "__main__":
             monte_carlo_expected_shortfall,
             current_portfolio_value
         )
+    )
+
+    monte_carlo_chart_path = (
+        Path(__file__).resolve().parent.parent
+        / "outputs"
+        / "monte_carlo_distribution.png"
+    )
+
+    plot_monte_carlo_distribution(
+        simulated_returns,
+        monte_carlo_var,
+        monte_carlo_expected_shortfall,
+        confidence_level=confidence_level,
+        number_of_bins=60,
+        show=False,
+        save_path=monte_carlo_chart_path
     )
 
     # -----------------------------
@@ -677,7 +694,8 @@ if __name__ == "__main__":
         "strategy_comparison": strategy_comparison,
         "charts": {
             "efficient_frontier": chart_path,
-            "strategy_growth": strategy_chart_path
+            "strategy_growth": strategy_chart_path,
+            "monte_carlo_distribution": monte_carlo_chart_path
         }
     }
 

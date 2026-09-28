@@ -381,3 +381,8 @@ def print_portfolio_report(report):
         "Strategy growth: "
         f"{charts['strategy_growth']}"
     )
+
+    print(
+        "Monte Carlo distribution: "
+        f"{charts['monte_carlo_distribution']}"
+    )
